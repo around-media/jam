@@ -13,6 +13,10 @@ import oauth2client.client
 logger = logging.getLogger(__name__)
 
 
+TIME_SLEEP_WAIT_FOR_OPERATION = 1
+TIME_SLEEP_WAIT_FOR_STATUS = 3
+
+
 def wait_for_operation(compute, project, gce_zone, operation):
     logger.debug('Waiting for operation to finish...')
     operation = operation['name'] if isinstance(operation, types.DictionaryType) else operation
@@ -29,7 +33,7 @@ def wait_for_operation(compute, project, gce_zone, operation):
                 raise Exception(result['error'])
             return result
 
-        time.sleep(1)
+        time.sleep(TIME_SLEEP_WAIT_FOR_OPERATION)
 
 
 class InstanceStatus(str, enum.Enum):
@@ -67,12 +71,23 @@ class InstanceStatus(str, enum.Enum):
 
 
 class ComputeEngine(object):
-    def __init__(self, project, gce_zone):
-        credentials = oauth2client.client.GoogleCredentials.get_application_default()
+    def __init__(self, project, gce_zone, http=None):
         self.project = project
         self.gce_zone = gce_zone
-        self.compute = googleapiclient.discovery.build('compute', 'v1', credentials=credentials, cache_discovery=False)
+        self.http = http
+        self.credentials = None
+        self.__compute = None
         self.__instances = {}
+
+    @property
+    def compute(self):
+        if self.__compute is None:
+            if self.http is None:
+                self.credentials = oauth2client.client.GoogleCredentials.get_application_default()
+            self.__compute = googleapiclient.discovery.build(
+                'compute', 'v1', credentials=self.credentials, cache_discovery=False, http=self.http
+            )
+        return self.__compute
 
     def get_instance(self, name):
         return self.__instances.setdefault(name, ComputeEngineInstance(
@@ -100,7 +115,7 @@ class ComputeEngine(object):
         }
         logger.info("[%s %s] Discovered the following instances: %s.",
                     self.__class__.__name__, self.project,
-                    ', '.join(i.name for i in self.__instances))
+                    ', '.join(name for name in self.__instances.iterkeys()))
         return self.__instances
 
 
@@ -120,7 +135,7 @@ class ComputeEngineInstance(object):
 
     @classmethod
     def build_from_info(cls, compute, info, info_ts=None, stale_after=None):
-        regex = (r'https://www.googleapis.com/compute/beta'
+        regex = (r'https://www.googleapis.com/compute/(?:beta|v\d)'
                  r'/projects/(?P<project>.*)'
                  r'/zones/(?P<gce_zone>.*)'
                  r'/instances/(?P<name>.*)')
@@ -161,7 +176,7 @@ class ComputeEngineInstance(object):
             if self.status in statuses:
                 break
             previous_status = self.status
-            time.sleep(3)
+            time.sleep(TIME_SLEEP_WAIT_FOR_STATUS)
 
     def start(self):
         logger.info("[%s %s] Starting Instance.", self.__class__.__name__, self.name)
