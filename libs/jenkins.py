@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import time
 
@@ -26,6 +27,7 @@ class Jenkins(object):
         )
         self.agents = {}
         self.auth = (username, api_token)
+        self.job_url = os.getenv('JOB_URL', '{jenkins_url}/job/Jam/'.format(jenkins_url=self.url))
         self._call = api_call(self, self.url, self.auth)
 
     def get_agent(self, name):
@@ -33,7 +35,8 @@ class Jenkins(object):
 
     @property
     def jobs(self):
-        return self._call('get', 'queue/api/json').json()['items']
+        return [job for job in self._call('get', 'queue/api/json').json()['items']
+                if not job['task'].get('url', None) == self.job_url]
 
 
 class JenkinsAgent(object):
