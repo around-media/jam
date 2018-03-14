@@ -14,7 +14,23 @@ def api_call(self, base_url, auth=None):
         header = '[%s %s]' if hasattr(self, 'name') else '[%s]'
         args = [self.__class__.__name__, self.name] if hasattr(self, 'name') else [self.__class__.__name__]
         logger.debug("{} External API call {} {}".format(header, method.upper(), url), *args)
-        return requests.request(method=method, url=url, auth=auth)
+        with requests.session() as session:
+            crumb_response = session.get(
+                url='{jenkins_url}/crumbIssuer/api/json?xpath=concat(//crumbRequestField,":",//crumb)'.format(
+                    jenkins_url=base_url
+                ),
+                auth=auth,
+            )
+            if crumb_response.status_code == 200:
+                crumb = crumb_response.json()
+                return session.request(method=method, url=url, auth=auth, headers={
+                    crumb['crumbRequestField']: crumb['crumb'],
+                })
+            else:
+                logger.error("url=%s\nheaders=%s\nbody=%s\n", crumb_response.request.url, crumb_response.request.headers, crumb_response.request.body)
+                logger.error(auth)
+                logger.error(crumb_response.text)
+                raise requests.ConnectionError('Could not issue Jenkins crumb.', response=crumb_response)
     return _call
 
 
