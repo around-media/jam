@@ -1,7 +1,7 @@
-import libs.compute_engine
+import jam.libs.compute_engine
 
-libs.compute_engine.TIME_SLEEP_WAIT_FOR_OPERATION = 0
-libs.compute_engine.TIME_SLEEP_WAIT_FOR_STATUS = 0
+jam.libs.compute_engine.TIME_SLEEP_WAIT_FOR_OPERATION = 0
+jam.libs.compute_engine.TIME_SLEEP_WAIT_FOR_STATUS = 0
 
 
 def test_compute_engine_list_all_instances(compute_engine, http_sequence_factory):

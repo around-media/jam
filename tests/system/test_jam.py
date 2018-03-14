@@ -1,6 +1,6 @@
 import sys
 
-import jam
+import jam.startup
 
 
 def test_args():
@@ -9,7 +9,7 @@ def test_args():
                     '--jenkins-api-token=pass '
                     '--jenkins-username=user '
                     'build1 build2').split()
-    args = jam.parse_args()
+    args = jam.startup.parse_args()
     assert ['build1', 'build2'] == args.nodes
     assert 'europe-west1-b' == args.gce_zone
     assert set(vars(args).keys()) == {'project', 'jenkins_api_token', 'jenkins_url', 'gce_zone', 'nodes',

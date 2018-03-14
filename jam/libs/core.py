@@ -3,9 +3,9 @@ import random
 
 import enum
 
-import libs.compute_engine
-from libs.compute_engine import InstanceStatus
-import libs.jenkins
+import jam.libs.compute_engine
+from jam.libs.compute_engine import InstanceStatus
+import jam.libs.jenkins
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ class Jam(object):
         self.jenkins_api_token = jenkins_api_token
         self.project = project
         self.gce_zone = gce_zone
-        self.compute_engine = libs.compute_engine.ComputeEngine(project, gce_zone)
-        self.jenkins = libs.jenkins.Jenkins(jenkins_url, jenkins_username, jenkins_api_token)
+        self.compute_engine = jam.libs.compute_engine.ComputeEngine(project, gce_zone)
+        self.jenkins = jam.libs.jenkins.Jenkins(jenkins_url, jenkins_username, jenkins_api_token)
         self.usable_node_names = usable_nodes
         self.__nodes = None
 

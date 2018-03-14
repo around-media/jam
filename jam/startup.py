@@ -1,7 +1,7 @@
 import argparse
 import time
 
-import libs.core
+import jam.libs.core as core
 
 
 def parse_args():
@@ -36,7 +36,7 @@ def parse_args():
 
 def monitor():
     args = parse_args()
-    jam = libs.core.Jam(
+    jam = core.Jam(
         jenkins_url=args.jenkins_url,
         jenkins_username=args.jenkins_username,
         jenkins_api_token=args.jenkins_api_token,
