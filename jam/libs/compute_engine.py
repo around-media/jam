@@ -55,27 +55,27 @@ class InstanceStatus(str, enum.Enum):
     """Resources have been acquired and the instance is being prepared for launch."""
     STAGING = 'STAGING'
 
-    """The instance is booting up or running. You should be able to ssh into the instance soon, though not 
+    """The instance is booting up or running. You should be able to ssh into the instance soon, though not
     immediately, after it enters this state."""
     RUNNING = 'RUNNING'
 
-    """The instance is being stopped either due to a failure, or the instance being shut down. This is a temporary 
+    """The instance is being stopped either due to a failure, or the instance being shut down. This is a temporary
     status and the instance will move to `TERMINATED`."""
     STOPPING = 'STOPPING'
 
     """No doc? Deprecated?"""
     STOPPED = 'STOPPED'
 
-    """The instance is being suspended, saving its state to persistent storage, and allowed to be resumed at a 
+    """The instance is being suspended, saving its state to persistent storage, and allowed to be resumed at a
     later time. This is a temporary status and the instance will move to `SUSPENDED`."""
     SUSPENDING = 'SUSPENDING'
 
-    """The instance is suspended. Suspended instances incur reduced per-minute, virtual machine usage charges while 
-    they are suspended. Any resources the virtual machine is using, such as persistent disks and static IP addresses, 
+    """The instance is suspended. Suspended instances incur reduced per-minute, virtual machine usage charges while
+    they are suspended. Any resources the virtual machine is using, such as persistent disks and static IP addresses,
     will continue to be charged until they are deleted."""
     SUSPENDED = 'SUSPENDED'
 
-    """The instance was shut down or encountered a failure, either through the API or from inside the guest. 
+    """The instance was shut down or encountered a failure, either through the API or from inside the guest.
     You can choose to restart the instance or delete it."""
     TERMINATED = 'TERMINATED'
 
@@ -163,17 +163,17 @@ class ComputeEngineInstance(object):
 
     def refresh(self):
         try:
-            self.info = self.compute.instances().get(project=self.project, zone=self.gce_zone, instance=self.name).execute()
+            self.info = self.compute.instances().get(
+                project=self.project, zone=self.gce_zone, instance=self.name
+            ).execute()
             self.info_ts = datetime.datetime.now()
         except googleapiclient.errors.HttpError as err:
             content = json.loads(err.content)
-            if 'error' in content:
-                for error in content['error'].get('errors', []):
-                    if error['reason'] == 'notFound':
-                        raise InstanceNotFound(
-                            "Instance {} does not exist in project {}".format(self.name, self.project)
-                        )
-
+            for error in content.get('error', {}).get('errors', []):
+                if error['reason'] == 'notFound':
+                    raise InstanceNotFound(
+                        "Instance {} does not exist in project {}".format(self.name, self.project)
+                    )
 
     @property
     def status(self):

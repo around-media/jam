@@ -35,7 +35,7 @@ def test_compute_engine_get_instance_not_exists(compute_engine, http_sequence_fa
     instance = compute_engine.get_instance('nonexistentnode')
     assert instance.name == 'nonexistentnode'
     with pytest.raises(jam.libs.compute_engine.InstanceNotFound):
-        _ = instance.status
+        _ = instance.status  # noqa: F841
 
 
 def test_compute_engine_start_instance(compute_engine, http_sequence_factory):

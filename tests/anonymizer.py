@@ -19,28 +19,27 @@ def random_ip():
 
     :return str: a random IP address.
     """
-    return '{}.{}.{}.{}'.format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    return '{}.{}.{}.{}'.format(
+        random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+    )
 
 
 def anonymize_email(root):
     anon_email = "012345678942-compute@developer.gserviceaccount.com"
-    if 'serviceAccounts' in root:
-        for account in root['serviceAccounts']:
-            if 'email' in account:
-                # $.serviceAccounts[*].email
-                print 'Replacing email {} => {}'.format(account['email'], anon_email)
-                account['email'] = anon_email
+    for account in root.get('serviceAccounts', []):
+        if 'email' in account:
+            # $.serviceAccounts[*].email
+            print 'Replacing email {} => {}'.format(account['email'], anon_email)
+            account['email'] = anon_email
 
 
 def anonymize_ip(root):
-    if 'networkInterfaces' in root:
-        for interface in root['networkInterfaces']:
-            if 'accessConfigs' in interface:
-                for config in interface['accessConfigs']:
-                    if 'natIP' in config:
-                        # $.networkInterfaces[*].accessConfigs[*].natIP
-                        print 'Replacing IP {}'.format(config['natIP'])
-                        config['natIP'] = random_ip()
+    for interface in root.get('networkInterfaces', []):
+        for config in interface.get('accessConfigs', []):
+            if 'natIP' in config:
+                # $.networkInterfaces[*].accessConfigs[*].natIP
+                print 'Replacing IP {}'.format(config['natIP'])
+                config['natIP'] = random_ip()
 
 
 def anonymize_windows_keys(root):
@@ -64,6 +63,23 @@ def get_item_kind(root):
     return REVERSED_ITEM_KIND[root.get('kind', 'unknown')]
 
 
+def anonymize_by_translations(text, translations):
+    for translation in translations:
+        text = text.replace(translation[0], translation[1])
+    return text
+
+
+def anonymize_json(root):
+    kind = get_item_kind(root)
+    if kind == ItemKind.INSTANCE_LIST:
+        for item in root.get('items', []):
+            anonymize_instance(item)
+    elif kind == ItemKind.INSTANCE:
+        anonymize_instance(root)
+    elif kind == ItemKind.OPERATION:
+        root['user'] = 'anonymous.user@anonymo.us'
+
+
 def anonymize(filepath, translations):
     """Anonymizes a json file.
 
@@ -81,18 +97,11 @@ def anonymize(filepath, translations):
     """
     with open(filepath, 'r') as f:
         out = f.read()
-    for translation in translations:
-        out = out.replace(translation[0], translation[1])
+
+    out = anonymize_by_translations(text=out, translations=translations)
+
     json_out = json.loads(out, object_pairs_hook=collections.OrderedDict)
-    kind = get_item_kind(json_out)
-    if kind == ItemKind.INSTANCE_LIST:
-        if 'items' in json_out:
-            for item in json_out['items']:
-                anonymize_instance(item)
-    elif kind == ItemKind.INSTANCE:
-        anonymize_instance(json_out)
-    elif kind == ItemKind.OPERATION:
-        json_out['user'] = 'anonymous.user@anonymo.us'
+    anonymize_json(json_out)
 
     with open(filepath, 'w') as f:
         json.dump(json_out, f, indent=1, separators=(',', ': '))

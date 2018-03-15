@@ -8,6 +8,19 @@ import requests
 logger = logging.getLogger(__name__)
 
 
+def perform_crumb_call(session, crumb_url, auth):
+    crumb_response = session.get(url=crumb_url, auth=auth)
+    if crumb_response.status_code != 200:
+        logger.error(
+            "url=%s\nheaders=%s\nbody=%s\n",
+            crumb_response.request.url, crumb_response.request.headers, crumb_response.request.body
+        )
+        logger.error(auth)
+        logger.error(crumb_response.text)
+        raise requests.ConnectionError('Could not issue Jenkins crumb.', response=crumb_response)
+    return crumb_response.json()
+
+
 def api_call(self, base_url, auth=None, crumb_url=None):
     def _call(method, api, retries=3):
         url = '{base_url}/{api}'.format(base_url=base_url, api=api)
@@ -15,25 +28,21 @@ def api_call(self, base_url, auth=None, crumb_url=None):
         args = [self.__class__.__name__, self.name] if hasattr(self, 'name') else [self.__class__.__name__]
         args_full = args + [method.upper(), url]
         logger.debug("{} External API call %s %s".format(header), *args_full)
+        exc_info = None
         for retry in xrange(retries):
             with requests.session() as session:
                 try:
-                    crumb_response = session.get(url=crumb_url, auth=auth)
-                    if crumb_response.status_code == 200:
-                        crumb = crumb_response.json()
-                        return session.request(method=method, url=url, auth=auth, headers={
-                            crumb['crumbRequestField']: crumb['crumb'],
-                        })
-                    else:
-                        logger.error("url=%s\nheaders=%s\nbody=%s\n", crumb_response.request.url, crumb_response.request.headers, crumb_response.request.body)
-                        logger.error(auth)
-                        logger.error(crumb_response.text)
-                        raise requests.ConnectionError('Could not issue Jenkins crumb.', response=crumb_response)
-                except requests.ConnectionError:
+                    crumb = perform_crumb_call(session=session, crumb_url=crumb_url, auth=auth)
+                    return session.request(method=method, url=url, auth=auth, headers={
+                        crumb['crumbRequestField']: crumb['crumb'],
+                    })
+                except requests.ConnectionError as err:
                     args_retry_fail = args + [retry + 1, retries]
                     logger.exception("{} Try %d/%d failed.".format(header), *args_retry_fail)
+                    exc_info = err
         else:
             logger.error("{} API call %s %s failed!".format(header), *args_full)
+            raise exc_info
     return _call
 
 
@@ -44,7 +53,7 @@ class Jenkins(object):
             protocol=url_match.get('protocol', 'http://'),
             bare_url=url_match['bare_url'],
         )
-        self.crumb_url = url='{jenkins_url}/crumbIssuer/api/json?xpath=concat(//crumbRequestField,":",//crumb)'.format(
+        self.crumb_url = '{jenkins_url}/crumbIssuer/api/json?xpath=concat(//crumbRequestField,":",//crumb)'.format(
             jenkins_url=self.url
         )
         self.agents = {}

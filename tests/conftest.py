@@ -3,7 +3,16 @@ from googleapiclient.http import HttpMockSequence
 import json
 import six
 import httplib2
-import io
+
+import logging
+
+
+logger = logging.getLogger('tests')
+
+
+def pytest_configure(config):
+    logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
+    logging.getLogger('flake8').setLevel(logging.ERROR)
 
 
 class HttpMockIterableSequence(HttpMockSequence):
@@ -19,12 +28,12 @@ class HttpMockIterableSequence(HttpMockSequence):
             iterable if isinstance(iterable, six.Iterator) else iter(iterable),
         )
 
-    def request(self, uri,
-              method='GET',
-              body=None,
-              headers=None,
-              redirections=1,
-              connection_type=None):
+    def request(self, uri,  # noqa: C901
+                method='GET',
+                body=None,
+                headers=None,
+                redirections=1,
+                connection_type=None):
         resp, content = self._iterable.next()
         if content == 'echo_request_headers':
             content = headers
@@ -41,6 +50,7 @@ class HttpMockIterableSequence(HttpMockSequence):
             if isinstance(content, six.text_type):
                 content = content.encode('utf-8')
             if content.startswith('file:'):
+                logger.debug('Reading file %s', content[len('file:'):])
                 with open(content[len('file:'):], 'r') as f:
                     content = f.read()
         return httplib2.Response(resp), content
