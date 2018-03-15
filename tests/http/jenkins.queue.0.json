@@ -1,0 +1,36 @@
+{
+  "_class": "hudson.model.Queue",
+  "discoverableItems": [],
+  "items": [
+    {
+      "_class": "hudson.model.Queue$BlockedItem",
+      "actions": [
+        {
+          "_class": "hudson.model.CauseAction",
+          "causes": [
+            {
+              "_class": "hudson.triggers.TimerTrigger$TimerTriggerCause",
+              "shortDescription": "Started by timer"
+            }
+          ]
+        },
+        {}
+      ],
+      "blocked": true,
+      "buildable": false,
+      "id": 841,
+      "inQueueSince": 1521145920546,
+      "params": "",
+      "stuck": false,
+      "task": {
+        "_class": "hudson.model.FreeStyleProject",
+        "name": "Jam",
+        "url": "mock://jenkins.mydomain.com:8080/job/Jam/",
+        "color": "red_anime"
+      },
+      "url": "queue/item/841/",
+      "why": "Build #66 is already in progress (ETA:2 hr 25 min)",
+      "buildableStartMilliseconds": 1521145920550
+    }
+  ]
+}

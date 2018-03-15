@@ -48,7 +48,7 @@ def api_call(self, base_url, auth=None, crumb_url=None):
 
 class Jenkins(object):
     def __init__(self, url, username, api_token):
-        url_match = re.match(r'^(?P<protocol>https?://)?(?P<bare_url>.*)/?$', url).groupdict()
+        url_match = re.match(r'^(?P<protocol>.*://)?(?P<bare_url>.*)/?$', url).groupdict()
         self.url = '{protocol}{bare_url}'.format(
             protocol=url_match.get('protocol', 'http://'),
             bare_url=url_match['bare_url'],
