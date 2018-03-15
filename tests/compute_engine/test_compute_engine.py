@@ -1,9 +1,11 @@
 import pytest
 
 import jam.libs.compute_engine
+import tests.helpers.helpers_compute_engine
 
 jam.libs.compute_engine.TIME_SLEEP_WAIT_FOR_OPERATION = 0
 jam.libs.compute_engine.TIME_SLEEP_WAIT_FOR_STATUS = 0
+DEFAULT_STALE_AFTER_MS = jam.libs.compute_engine.ComputeEngineInstance.DEFAULT_STALE_AFTER_MS
 
 
 def test_compute_engine_list_all_instances(compute_engine, http_sequence_factory):
@@ -47,11 +49,11 @@ def test_compute_engine_start_instance(compute_engine, http_sequence_factory):
         ({'status': '200'}, 'file:tests/http/compute.operations.get-start-done.json'),
         ({'status': '200'}, 'file:tests/http/compute.instances.get.build1-running.json'),
     ])
-    jam.libs.compute_engine.ComputeEngineInstance.DEFAULT_STALE_AFTER_MS = 0
     compute_engine.http = http
     instance = compute_engine.get_instance('build1')
     assert instance.status == 'TERMINATED'
     instance.start()
+    tests.helpers.helpers_compute_engine.make_info_instantly_stale(instance)
     assert instance.status == 'RUNNING'
 
 
@@ -64,11 +66,11 @@ def test_compute_engine_stop_instance(compute_engine, http_sequence_factory):
         ({'status': '200'}, 'file:tests/http/compute.operations.get-stop-done.json'),
         ({'status': '200'}, 'file:tests/http/compute.instances.get.build1-terminated.json'),
     ])
-    jam.libs.compute_engine.ComputeEngineInstance.DEFAULT_STALE_AFTER_MS = 0
     compute_engine.http = http
     instance = compute_engine.get_instance('build1')
     assert instance.status == 'RUNNING'
     instance.stop()
+    tests.helpers.helpers_compute_engine.make_info_instantly_stale(instance)
     assert instance.status == 'TERMINATED'
 
 

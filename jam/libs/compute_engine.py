@@ -30,6 +30,7 @@ class InstanceNotFound(ComputeEngineError):
 def wait_for_operation(compute, project, gce_zone, operation):
     logger.debug('Waiting for operation to finish...')
     operation = operation['name'] if isinstance(operation, types.DictionaryType) else operation
+    previous_status = None
     while True:
         result = compute.zoneOperations().get(
             project=project,
@@ -37,8 +38,11 @@ def wait_for_operation(compute, project, gce_zone, operation):
             operation=operation,
         ).execute()
 
+        if not previous_status == result['status']:
+            logger.info("Operation %s is %s", result['operationType'], result['status'])
+            previous_status = result['status']
+
         if result['status'] == 'DONE':
-            logger.debug("Operation done.")
             if 'error' in result:
                 raise Exception(result['error'])
             return result
