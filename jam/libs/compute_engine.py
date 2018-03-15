@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import re
 import time
@@ -7,6 +8,7 @@ import types
 import enum
 import googleapiclient
 import googleapiclient.discovery
+import googleapiclient.errors
 import oauth2client.client
 
 
@@ -15,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 TIME_SLEEP_WAIT_FOR_OPERATION = 1
 TIME_SLEEP_WAIT_FOR_STATUS = 3
+
+
+class ComputeEngineError(Exception):
+    pass
+
+
+class InstanceNotFound(ComputeEngineError):
+    pass
 
 
 def wait_for_operation(compute, project, gce_zone, operation):
@@ -152,8 +162,18 @@ class ComputeEngineInstance(object):
         return instance
 
     def refresh(self):
-        self.info = self.compute.instances().get(project=self.project, zone=self.gce_zone, instance=self.name).execute()
-        self.info_ts = datetime.datetime.now()
+        try:
+            self.info = self.compute.instances().get(project=self.project, zone=self.gce_zone, instance=self.name).execute()
+            self.info_ts = datetime.datetime.now()
+        except googleapiclient.errors.HttpError as err:
+            content = json.loads(err.content)
+            if 'error' in content:
+                for error in content['error'].get('errors', []):
+                    if error['reason'] == 'notFound':
+                        raise InstanceNotFound(
+                            "Instance {} does not exist in project {}".format(self.name, self.project)
+                        )
+
 
     @property
     def status(self):

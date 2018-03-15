@@ -41,7 +41,7 @@ class HttpMockIterableSequence(HttpMockSequence):
             if isinstance(content, six.text_type):
                 content = content.encode('utf-8')
             if content.startswith('file:'):
-                with io.open(content[len('file:'):], 'r', encoding='utf-8') as f:
+                with open(content[len('file:'):], 'r') as f:
                     content = f.read()
         return httplib2.Response(resp), content
 

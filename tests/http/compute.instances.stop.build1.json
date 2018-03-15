@@ -1,0 +1,14 @@
+{
+ "kind": "compute#operation",
+ "id": "4413961557584114516",
+ "name": "operation-1521110458685-56771208dd648-066d2da3-babd617d",
+ "zone": "https://www.googleapis.com/compute/v1/projects/jam-project/zones/europe-west1-b",
+ "operationType": "stop",
+ "targetLink": "https://www.googleapis.com/compute/v1/projects/jam-project/zones/europe-west1-b/instances/build1",
+ "targetId": "7197883393777887159",
+ "status": "PENDING",
+ "user": "anonymous.user@anonymo.us",
+ "progress": 0,
+ "insertTime": "2018-03-15T03:32:18.339-07:00",
+ "selfLink": "https://www.googleapis.com/compute/v1/projects/jam-project/zones/europe-west1-b/operations/operation-1521110458685-56771208dd648-066d2da3-babd617d"
+}
