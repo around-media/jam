@@ -1,0 +1,12 @@
+X-Content-Type-Options: nosniff
+Expires: Thu, 01 Jan 1970 00:00:00 GMT
+Content-Type: text/html;charset=utf-8
+X-Hudson: 1.395
+X-Jenkins: 2.89.4
+X-Jenkins-Session: 232b49bc
+X-You-Are-Authenticated-As: anonymous
+X-You-Are-In-Group-Disabled: JENKINS-39402: use -Dhudson.security.AccessDeniedException2.REPORT_GROUP_HEADERS=true or use /whoAmI to diagnose
+X-Required-Permission: hudson.model.Hudson.Read
+X-Permission-Implied-By: hudson.security.Permission.GenericRead, hudson.model.Hudson.Administer
+Content-Length: 981
+Server: Jetty(9.4.z-SNAPSHOT)

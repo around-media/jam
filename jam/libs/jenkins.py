@@ -68,8 +68,12 @@ class Jenkins(object):
 
     @property
     def jobs(self):
-        return [job for job in self._call('get', 'queue/api/json').json()['items']
-                if not job['task'].get('url', None) == self.job_url]
+        try:
+            return [job for job in self._call('get', 'queue/api/json').json()['items']
+                    if not job['task'].get('url', None) == self.job_url]
+        except requests.ConnectionError:
+            logger.exception("[%s] Impossible to retrieve job queue.", self.__class__.__name__)
+            raise
 
 
 class JenkinsAgent(object):
@@ -127,7 +131,12 @@ class JenkinsAgent(object):
         logger.info("[%s %s] Agent is launched.", self.__class__.__name__, self.name)
 
     def refresh(self):
-        self.info = self._call('get', 'api/json').json()
+        try:
+            self.info = self._call('get', 'api/json').json()
+        except requests.ConnectionError:
+            logger.exception("[%s %s] Impossible to get information about this agent!",
+                             self.__class__.__name__, self.name)
+            raise
 
     def launch(self):
         logger.info("[%s %s] Launching Agent.", self.__class__.__name__, self.name)

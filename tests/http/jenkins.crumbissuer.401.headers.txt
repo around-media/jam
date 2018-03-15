@@ -1,0 +1,6 @@
+X-Content-Type-Options: nosniff
+WWW-Authenticate: Basic realm="Jenkins"
+Cache-Control: must-revalidate,no-cache,no-store
+Content-Type: text/html;charset=iso-8859-1
+Content-Length: 393
+Server: Jetty(9.4.z-SNAPSHOT)
