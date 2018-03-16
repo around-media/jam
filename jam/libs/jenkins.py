@@ -80,6 +80,7 @@ class JenkinsAgent(object):
     QUIET_OFFLINE_CAUSES = {
         'hudson.slaves.OfflineCause$ChannelTermination',
     }
+    WAIT_TIME_FORCE_LAUNCH = 15
 
     def __init__(self, url, name, auth=None, crumb_url=None):
         self.url = '{}/computer/{}'.format(url, name)
@@ -125,9 +126,8 @@ class JenkinsAgent(object):
                 logger.info(
                     "[%s %s] Agent is offline because %s.", self.__class__.__name__, self.name, offline_cause_reason
                 )
-                logger.info("[%s %s] Attempting to launch agent.", self.__class__.__name__, self.name)
                 self.launch()
-            time.sleep(15)
+            time.sleep(self.WAIT_TIME_FORCE_LAUNCH)
         logger.info("[%s %s] Agent is launched.", self.__class__.__name__, self.name)
 
     def refresh(self):
@@ -144,4 +144,4 @@ class JenkinsAgent(object):
 
     def stop(self):
         logger.info("[%s %s] Stopping Agent.", self.__class__.__name__, self.name)
-        self._call('post', 'doDisconnect?offlineMessage=auto')
+        self._call('post', 'doDisconnect?offlineMessage=jam.stop')
