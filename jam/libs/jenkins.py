@@ -3,9 +3,24 @@ import os
 import re
 import time
 
+import enum
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+class StatusError(AttributeError):
+    pass
+
+
+class AgentStatus(enum.Enum):
+    ONLINE_BUSY = 'ONLINE BUSY'
+    ONLINE_IDLE = 'ONLINE IDLE'
+    SCHEDULED_FOR_DISCONNECTION = 'BUSY BUT WILL DISCONNECT AFTERWARDS'
+    DISCONNECTED = 'DISCONNECTED'
+    SCHEDULED_FOR_SLEEP = 'BUSY BUT WILL SLEEP AFTERWARDS'
+    SLEEPING = 'SLEEPING'
+    ERROR = 'ERROR'
 
 
 def perform_crumb_call(session, crumb_url, auth):
@@ -82,12 +97,28 @@ class JenkinsAgent(object):
     }
     WAIT_TIME_FORCE_LAUNCH = 15
 
+    STATUSES = {
+        (False, False, False): AgentStatus.ONLINE_BUSY,
+        (False, False, True): AgentStatus.ONLINE_IDLE,
+        (False, True, False): AgentStatus.ERROR,
+        (False, True, True): AgentStatus.ERROR,
+        (True, False, False): AgentStatus.SCHEDULED_FOR_DISCONNECTION,
+        (True, False, True): AgentStatus.DISCONNECTED,
+        (True, True, False): AgentStatus.SCHEDULED_FOR_SLEEP,
+        (True, True, True): AgentStatus.SLEEPING,
+    }
+
     def __init__(self, url, name, auth=None, crumb_url=None):
         self.url = '{}/computer/{}'.format(url, name)
         self.name = name
         self.info = None
         self.auth = auth
         self._call = api_call(self, base_url=self.url, auth=self.auth, crumb_url=crumb_url)
+
+    @property
+    def status(self):
+        self.refresh()
+        return self.STATUSES[(self.info['offline'], self.info['temporarilyOffline'], self.info['idle'])]
 
     @property
     def is_idle(self):
@@ -118,6 +149,60 @@ class JenkinsAgent(object):
             return self.info['offlineCause']['_class']
         return '{} || {}'.format(self.info['offlineCause']['_class'], self.info['offlineCauseReason'])
 
+    def _reconnect(self):
+        pass
+
+    def _wake_up(self):
+        self.toggle()
+        status = self.status
+
+        if status is AgentStatus.DISCONNECTED:
+            self._reconnect()
+
+        if status in (AgentStatus.SCHEDULED_FOR_SLEEP, AgentStatus.SLEEPING, AgentStatus.ERROR):
+            raise StatusError
+
+    def smart_launch(self):
+        status = self.status
+        if status in (AgentStatus.ONLINE_BUSY, AgentStatus.ONLINE_IDLE):
+            return
+
+        if status is AgentStatus.DISCONNECTED:
+            self._reconnect()
+
+        elif status is AgentStatus.SLEEPING:
+            self._wake_up()
+
+        elif status is AgentStatus.SCHEDULED_FOR_SLEEP:
+            self.toggle()
+        else:
+            raise StatusError
+
+    def smart_sleep(self):
+        status = self.status
+
+        if status in (AgentStatus.DISCONNECTED, AgentStatus.SCHEDULED_FOR_SLEEP, AgentStatus.SLEEPING):
+            logger.info("[%s %s] Already off (sleeping, scheduled or disconnected).", self.__class__.__name__, self.name)
+            return
+
+        if status is AgentStatus.ONLINE_BUSY:
+            logger.info(
+                "[%s %s] Agent is online and busy. It will be scheduled for sleep", self.__class__.__name__, self.name
+            )
+            self.toggle()
+            if self.status is AgentStatus.SCHEDULED_FOR_SLEEP:
+                return
+
+        elif status is AgentStatus.ONLINE_IDLE:
+            logger.info(
+                "[%s %s] Agent is online and idle. It will be put to sleep", self.__class__.__name__, self.name
+            )
+            self.toggle()
+            if self.status is AgentStatus.SLEEPING:
+                return
+
+        raise StatusError
+
     def force_launch(self):
         while not self.is_online:
             logger.info("[%s %s] Agent is not launched.", self.__class__.__name__, self.name)
@@ -145,3 +230,11 @@ class JenkinsAgent(object):
     def stop(self):
         logger.info("[%s %s] Stopping Agent.", self.__class__.__name__, self.name)
         self._call('post', 'doDisconnect?offlineMessage=jam.stop')
+
+    def toggle(self):
+        logger.info("[%s %s] Agent is %s.", self.__class__.__name__, self.name,
+                    'online' if self.is_online else 'offline')
+        logger.info("[%s %s] Toggling Agent.", self.__class__.__name__, self.name)
+        self._call('post', 'toggleOffline?offlineMessage=jam.toggle')
+        logger.info("[%s %s] Agent is %s.", self.__class__.__name__, self.name,
+                    'online' if self.is_online else 'offline')
