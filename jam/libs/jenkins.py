@@ -53,7 +53,7 @@ class Jenkins(object):
             protocol=url_match.get('protocol', 'http://'),
             bare_url=url_match['bare_url'],
         )
-        self.crumb_url = '{jenkins_url}/crumbIssuer/api/json?xpath=concat(//crumbRequestField,":",//crumb)'.format(
+        self.crumb_url = '{jenkins_url}/crumbIssuer/api/json'.format(
             jenkins_url=self.url
         )
         self.agents = {}
