@@ -4,6 +4,9 @@ import time
 import jam.libs.core as core
 
 
+LOOP_TIME = 5
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Jenkins Agent Manager -- Manages agents on Google Compute Engine.")
 
@@ -27,11 +30,11 @@ def parse_args():
 
     args = parser.parse_args()
 
-    if not args.nodes:
-        parser.print_help()
-        exit(1)
-
     return args
+
+
+def keep_running():
+    return True  # pragma: no cover
 
 
 def monitor():
@@ -45,9 +48,9 @@ def monitor():
         usable_nodes=args.nodes,
     )
 
-    while True:
+    while keep_running():
         jam.balance_nodes()
-        time.sleep(5)
+        time.sleep(LOOP_TIME)
 
 
 if __name__ == '__main__':
