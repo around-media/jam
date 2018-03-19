@@ -1,8 +1,14 @@
-import mock
 import pytest
 
 import jam.libs.jenkins
 import tests.helpers.helpers_jenkins
+
+
+class ApiCallTestImplementation(jam.libs.jenkins.ApiCallMixin):
+    def __init__(self, base_url, auth, crumb_url):
+        self.api_settings = self.ApiCallSettings(base_url=base_url, auth=auth, crumb_url=crumb_url)
+
+    __call__ = jam.libs.jenkins.ApiCallMixin.api_call
 
 
 @pytest.fixture
@@ -22,8 +28,7 @@ def crumb_url():
 
 @pytest.fixture
 def api_call():
-    obj = mock.Mock(spec=jam.libs.jenkins.Jenkins)
-    return jam.libs.jenkins.api_call(obj, base_url=base_url(), auth=auth(), crumb_url=crumb_url())
+    return ApiCallTestImplementation(base_url=base_url(), auth=auth(), crumb_url=crumb_url())
 
 
 @pytest.fixture

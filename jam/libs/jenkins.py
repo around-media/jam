@@ -1,3 +1,4 @@
+import collections
 import logging
 import os
 import re
@@ -8,22 +9,27 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def perform_crumb_call(session, crumb_url, auth):
-    crumb_response = session.get(url=crumb_url, auth=auth)
-    if crumb_response.status_code != 200:
-        logger.error(
-            "url=%s\nheaders=%s\nbody=%s\n",
-            crumb_response.request.url, crumb_response.request.headers, crumb_response.request.body
-        )
-        logger.error(auth)
-        logger.error(crumb_response.text)
-        raise requests.ConnectionError('Could not issue Jenkins crumb.', response=crumb_response)
-    return crumb_response.json()
+class ApiCallMixin(object):
+    ApiCallSettings = collections.namedtuple('ApiCallSettings', ['base_url', 'auth', 'crumb_url'])
 
+    def __perform_crumb_call(self, session):
+        crumb_response = session.get(url=self.api_settings.crumb_url, auth=self.api_settings.auth)
+        if crumb_response.status_code != 200:
+            logger.error(
+                "url=%s\nheaders=%s\nbody=%s\n",
+                crumb_response.request.url, crumb_response.request.headers, crumb_response.request.body
+            )
+            logger.error(self.api_settings.auth)
+            logger.error(crumb_response.text)
+            raise requests.ConnectionError('Could not issue Jenkins crumb.', response=crumb_response)
+        return crumb_response.json()
 
-def api_call(self, base_url, auth=None, crumb_url=None):
-    def _call(method, api, retries=3):
-        url = '{base_url}/{api}'.format(base_url=base_url, api=api)
+    def api_call(self, method, api, retries=3):
+        if not hasattr(self, 'api_settings') or not isinstance(self.api_settings, self.ApiCallSettings):
+            raise AttributeError("Class %s must have a member called 'api_settings' which should be a %s!".format(
+                self.__class__.__name__, self.ApiCallSettings.__name__
+            ))
+        url = '{base_url}/{api}'.format(base_url=self.api_settings.base_url, api=api)
         header = '[%s %s]' if hasattr(self, 'name') else '[%s]'
         args = [self.__class__.__name__, self.name] if hasattr(self, 'name') else [self.__class__.__name__]
         args_full = args + [method.upper(), url]
@@ -32,8 +38,8 @@ def api_call(self, base_url, auth=None, crumb_url=None):
         for retry in xrange(retries):
             with requests.session() as session:
                 try:
-                    crumb = perform_crumb_call(session=session, crumb_url=crumb_url, auth=auth)
-                    return session.request(method=method, url=url, auth=auth, headers={
+                    crumb = self.__perform_crumb_call(session=session)
+                    return session.request(method=method, url=url, auth=self.api_settings.auth, headers={
                         crumb['crumbRequestField']: crumb['crumb'],
                     })
                 except requests.ConnectionError as err:
@@ -43,10 +49,9 @@ def api_call(self, base_url, auth=None, crumb_url=None):
         else:
             logger.error("{} API call %s %s failed!".format(header), *args_full)
             raise exc_info
-    return _call
 
 
-class Jenkins(object):
+class Jenkins(ApiCallMixin):
     def __init__(self, url, username, api_token):
         url_match = re.match(r'^(?P<protocol>.*://)?(?P<bare_url>.*)/?$', url).groupdict()
         self.url = '{protocol}{bare_url}'.format(
@@ -59,7 +64,7 @@ class Jenkins(object):
         self.agents = {}
         self.auth = (username, api_token)
         self.job_url = os.getenv('JOB_URL', '{jenkins_url}/job/Jam/'.format(jenkins_url=self.url))
-        self._call = api_call(self, base_url=self.url, auth=self.auth, crumb_url=self.crumb_url)
+        self.api_settings = self.ApiCallSettings(base_url=self.url, auth=self.auth, crumb_url=self.crumb_url)
 
     def get_agent(self, name):
         return self.agents.setdefault(
@@ -69,14 +74,14 @@ class Jenkins(object):
     @property
     def jobs(self):
         try:
-            return [job for job in self._call('get', 'queue/api/json').json()['items']
+            return [job for job in self.api_call('get', 'queue/api/json').json()['items']
                     if not job['task'].get('url', None) == self.job_url]
         except requests.ConnectionError:
             logger.exception("[%s] Impossible to retrieve job queue.", self.__class__.__name__)
             raise
 
 
-class JenkinsAgent(object):
+class JenkinsAgent(ApiCallMixin):
     QUIET_OFFLINE_CAUSES = {
         'hudson.slaves.OfflineCause$ChannelTermination',
     }
@@ -87,7 +92,8 @@ class JenkinsAgent(object):
         self.name = name
         self.info = None
         self.auth = auth
-        self._call = api_call(self, base_url=self.url, auth=self.auth, crumb_url=crumb_url)
+        self.crumb_url = crumb_url
+        self.api_settings = self.ApiCallSettings(base_url=self.url, auth=self.auth, crumb_url=self.crumb_url)
 
     @property
     def is_idle(self):
@@ -132,7 +138,7 @@ class JenkinsAgent(object):
 
     def refresh(self):
         try:
-            self.info = self._call('get', 'api/json').json()
+            self.info = self.api_call('get', 'api/json').json()
         except requests.ConnectionError:
             logger.exception("[%s %s] Impossible to get information about this agent!",
                              self.__class__.__name__, self.name)
@@ -140,8 +146,8 @@ class JenkinsAgent(object):
 
     def launch(self):
         logger.info("[%s %s] Launching Agent.", self.__class__.__name__, self.name)
-        self._call('post', 'launchSlaveAgent')
+        self.api_call('post', 'launchSlaveAgent')
 
     def stop(self):
         logger.info("[%s %s] Stopping Agent.", self.__class__.__name__, self.name)
-        self._call('post', 'doDisconnect?offlineMessage=jam.stop')
+        self.api_call('post', 'doDisconnect?offlineMessage=jam.stop')

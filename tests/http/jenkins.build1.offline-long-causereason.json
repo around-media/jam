@@ -1,0 +1,59 @@
+{
+  "_class": "hudson.slaves.SlaveComputer",
+  "actions": [
+    {}
+  ],
+  "description": "",
+  "displayName": "build1",
+  "executors": [
+    {}
+  ],
+  "icon": "computer-x.png",
+  "iconClassName": "icon-computer-x",
+  "idle": true,
+  "jnlpAgent": false,
+  "launchSupported": true,
+  "loadStatistics": {
+    "_class": "hudson.model.Label$1"
+  },
+  "manualLaunchAllowed": true,
+  "monitorData": {
+    "hudson.node_monitors.SwapSpaceMonitor": {
+      "_class": "hudson.node_monitors.SwapSpaceMonitor$MemoryUsage2",
+      "availablePhysicalMemory": 60708937728,
+      "availableSwapSpace": 60136038400,
+      "totalPhysicalMemory": 64424050688,
+      "totalSwapSpace": 65497792512
+    },
+    "hudson.node_monitors.TemporarySpaceMonitor": {
+      "_class": "hudson.node_monitors.DiskSpaceMonitorDescriptor$DiskSpace",
+      "timestamp": 1521196191500,
+      "path": "C:\\Users\\user\\AppData\\Local\\Temp",
+      "size": 25337372672
+    },
+    "hudson.node_monitors.DiskSpaceMonitor": {
+      "_class": "hudson.node_monitors.DiskSpaceMonitorDescriptor$DiskSpace",
+      "timestamp": 1521196190146,
+      "path": "C:\\jenkins",
+      "size": 25337372672
+    },
+    "hudson.node_monitors.ArchitectureMonitor": "Windows Server 2016 (amd64)",
+    "hudson.node_monitors.ResponseTimeMonitor": {
+      "_class": "hudson.node_monitors.ResponseTimeMonitor$Data",
+      "timestamp": 1521196190148,
+      "average": 1172
+    },
+    "hudson.node_monitors.ClockMonitor": {
+      "_class": "hudson.util.ClockDifference",
+      "diff": 0
+    }
+  },
+  "numExecutors": 1,
+  "offline": true,
+  "offlineCause": {
+    "_class": "hudson.slaves.OfflineCause$ChannelTermination"
+  },
+  "offlineCauseReason": "org.jinterop.dcom.common.JIException: Message not found for errorCode: 0x00000005\n    at org.jinterop.winreg.smb.JIWinRegStub.winreg_CreateKey(JIWinRegStub.java:297)\n    at org.jinterop.dcom.core.JIComServer.initialise(JIComServer.java:480)\n    at org.jinterop.dcom.core.JIComServer.<init>(JIComServer.java:427)\n    at org.jvnet.hudson.wmi.WMI.connect(WMI.java:59)\n    at hudson.os.windows.ManagedWindowsServiceLauncher.launch(ManagedWindowsServiceLauncher.java:208)\n    at hudson.slaves.SlaveComputer$1.call(SlaveComputer.java:285)\n    at jenkins.util.ContextResettingExecutorService$2.call(ContextResettingExecutorService.java:46)\n    at java.util.concurrent.FutureTask.run(FutureTask.java:266)\n    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n    at java.lang.Thread.run(Thread.java:748)\nCaused by: org.jinterop.dcom.common.JIRuntimeException: Message not found for errorCode: 0x00000005\n    at org.jinterop.winreg.IJIWinReg$createKey.read(IJIWinReg.java:459)\n    at ndr.NdrObject.decode(NdrObject.java:19)\n    at rpc.ConnectionOrientedEndpoint.call(ConnectionOrientedEndpoint.java:138)\n    at rpc.Stub.call(Stub.java:112)\n    at org.jinterop.winreg.smb.JIWinRegStub.winreg_CreateKey(JIWinRegStub.java:291)\n    ... 10 more",
+  "oneOffExecutors": [],
+  "temporarilyOffline": false
+}
