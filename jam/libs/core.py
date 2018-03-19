@@ -6,19 +6,9 @@ import enum
 import jam.libs.compute_engine
 from jam.libs.compute_engine import InstanceStatus
 import jam.libs.jenkins
+import jam.libs.utils
 
 logger = logging.getLogger(__name__)
-
-
-def merge_dicts(*dict_args):
-    """
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    """
-    result = {}
-    for dictionary in dict_args:
-        result.update(dictionary)
-    return result
 
 
 class Jam(object):
@@ -64,7 +54,7 @@ class Jam(object):
 
     def balance_nodes(self):
         jobs = self.jenkins.jobs
-        idle_or_starting_nodes = merge_dicts(self.idle_nodes, self.starting_nodes)
+        idle_or_starting_nodes = jam.libs.utils.merge_dicts(self.idle_nodes, self.starting_nodes)
         if jobs:
             if len(idle_or_starting_nodes) == len(jobs):
                 logger.info(
@@ -95,7 +85,7 @@ class Jam(object):
     def scale_up(self):
         jobs = self.jenkins.jobs
         offline_nodes = self.offline_nodes
-        idle_or_starting_nodes = merge_dicts(self.idle_nodes, self.starting_nodes)
+        idle_or_starting_nodes = jam.libs.utils.merge_dicts(self.idle_nodes, self.starting_nodes)
         if offline_nodes:
             nb_to_start_up = max(min(len(offline_nodes), len(jobs)) - len(idle_or_starting_nodes), 0)
             selected_offline_nodes = {
