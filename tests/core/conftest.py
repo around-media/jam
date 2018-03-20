@@ -16,10 +16,6 @@ def get_jam():
         gce_zone='europe-west1-b',
         usable_nodes=['build1', 'build2'],
     )
-    # manager.compute_engine.http = tests.conftest.HttpMockIterableSequence([
-    #     ({'status': '200'}, 'file:tests/http/compute-discovery.json'),
-    #     ({'status': '200'}, 'file:tests/http/compute.instances.list.json')],
-    # )
     return manager
 
 

@@ -29,6 +29,21 @@ def tests_require():
     return parse_req_file('requirements_test.txt')
 
 
+class PyTest(setuptools.command.test.test):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to pytest")]
+
+    def initialize_options(self):
+        setuptools.command.test.test.initialize_options(self)
+        self.pytest_args = ''
+
+    def run_tests(self):
+        import shlex
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(shlex.split(self.pytest_args))
+        sys.exit(errno)
+
+
 setuptools.setup(
     name='jam',
     packages=['jam'],
@@ -53,4 +68,5 @@ setuptools.setup(
     include_package_data=True,
     install_requires=install_requires(),
     tests_require=tests_require(),
+    cmdclass={'test': PyTest},
 )
