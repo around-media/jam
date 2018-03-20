@@ -1,3 +1,4 @@
+import collections
 import logging
 import random
 
@@ -26,10 +27,10 @@ class Jam(object):
     @property
     def nodes(self):
         if self.__nodes is None:
-            self.__nodes = {
-                name: Node(self.jenkins.get_agent(name), self.compute_engine.get_instance(name))
+            self.__nodes = collections.OrderedDict(
+                (name, Node(self.jenkins.get_agent(name), self.compute_engine.get_instance(name)))
                 for name in self.usable_node_names
-            }
+            )
         return self.__nodes
 
     @property

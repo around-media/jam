@@ -61,7 +61,7 @@ class Jenkins(ApiCallMixin):
         self.crumb_url = '{jenkins_url}/crumbIssuer/api/json'.format(
             jenkins_url=self.url
         )
-        self.agents = {}
+        self.agents = collections.OrderedDict()
         self.auth = (username, api_token)
         self.job_url = os.getenv('JOB_URL', '{jenkins_url}/job/Jam/'.format(jenkins_url=self.url))
         self.api_settings = self.ApiCallSettings(base_url=self.url, auth=self.auth, crumb_url=self.crumb_url)

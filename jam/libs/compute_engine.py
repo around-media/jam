@@ -1,3 +1,4 @@
+import collections
 import datetime
 import json
 import logging
@@ -91,7 +92,7 @@ class ComputeEngine(object):
         self.http = http
         self.credentials = None
         self.__compute = None
-        self.__instances = {}
+        self.__instances = collections.OrderedDict()
 
     @property
     def compute(self):
