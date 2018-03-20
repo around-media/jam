@@ -155,7 +155,7 @@ class Node(object):
         elif self.instance.status in [InstanceStatus.STOPPING, InstanceStatus.SUSPENDING]:
             self.__status = NodeStatus.SWITCHING_OFF
         else:
-            self.__status = NodeStatus.UNKNOWN
+            self.__status = NodeStatus.UNKNOWN  # pragma: no cover
         return self.__status
 
     @property
